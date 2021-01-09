@@ -18,15 +18,17 @@ router.use(session({
 
 /* userRegister API */
 router.post('/userRegister', async (req, res, next) => {
+    if (!req.body.first_name || !req.body.email || !req.body.phone_number || !req.body.password || !req.body.confirm_password || !req.body.house_no || !req.body.street_address || !req.body.city || !req.body.pin_code || !req.body.company_name || !req.body.company_email || !req.body.company_phone || !req.body.company_address) {
+        return res.status(400).json({ success: false, message: "Required field can not be empty" });
+    }
+
     let  first_name = req.body.first_name;
     let  last_name = req.body.last_name;
     let  email = req.body.email;
     let  phoneNnumber = req.body.phone_number;
     let  password = req.body.password;
     let  confirmPassword = req.body.confirm_password;
-    const addressData = { house_no, street_address, city, pin_code } = req.body;
-    console.log(addressData);
-
+    
     if (password !==confirmPassword) {
         res.json({ message: "Password and confirm password must be same!!" });
     }
