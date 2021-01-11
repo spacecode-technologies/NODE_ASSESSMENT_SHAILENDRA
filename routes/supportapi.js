@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 var jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+var request = require('request');
 
 let router 	= express.Router();
 
@@ -103,9 +104,7 @@ router.post('/userRegister', async (req, res, next) => {
 
 /* userLogin API */
 router.post('/userLogin', async (req, res, next) => {
-    console.log('-> call function Login');
     let  email = req.body.email;
-    
     userSchema.find({email: email})
     .exec()
     .then(user => {
@@ -222,5 +221,85 @@ router.delete('/deleteById/:id', async (req, res) => {
         res.status(500).json({success: false, error: err})
     }
 });
+
+/* ----------------------- Day-3 Task ----------------------------------------------------  */
+router.get('/pincodeDetails/:pin', async (req, res, next) => {
+
+    await request.get('https://api.postalpincode.in/pincode/'+ req.params.pin, function(err, response, body) {
+        if(!err) {
+            let pincodeDetail = JSON.parse(body);
+            return res.status(200).json({success: true,  pincodeDetail})
+        }
+    })
+});
+
+/* Add User API */
+router.post('/addUser', async (req, res) => {
+    if (!req.body.first_name || !req.body.email || !req.body.phone_number || !req.body.password || !req.body.role) {
+        return res.status(400).json({ success: false, message: "Required field can not be empty" });
+    }
+    let  email = req.body.email;
+    let  password = req.body.password;
+    let  phone_number = req.body.phone_number;
+    let  confirmPassword = req.body.confirm_password;
+
+    if (password !==confirmPassword) {
+        res.json({ message: "Password and confirm password must be same!!" });
+    }
+
+    if (email) {
+		var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		var results = re.test(email)
+		if (results == false) {
+			return res.json({success: false, message: "Invalid Email Id"});
+		}
+    }
+    const checkPhone = await userSchema.find({"phone_number": phone_number });
+	if (checkPhone.length > 0) {
+		return res.json({ success: false, message: "phone number already exists!" });
+    }
+    const checkEmail = await userSchema.find({"email": email });
+	if (checkEmail.length > 0) {
+		return res.json({ success: false, message: "email already exists!" });
+    }
+    if (phone_number.length!=10) {
+		return res.json({ success: false, message: "phone number must be enter 10 Digit"});
+    }
+    if(isNaN(phone_number)||phone_number.indexOf(" ")!=-1) {
+		return res.json({ success: false, msg: "invalid phone number enter valid digit" });
+    }
+    let userDetails = new userSchema({
+        email: email,
+        role: req.body.role,
+        password: password,
+        phone_number: phone_number,
+        last_name: req.body.last_name,
+        first_name: req.body.first_name
+    })
+    userDetails.save().then(record => {
+        return res.status(201).json({success:true, message:"Registered Successfully ", data: record})
+    })
+});
+
+/* getAllUserByAdmin API */
+router.post('/getAllUserByAdmin', async (req, res) => {
+    var emailId = req.body.emailId;
+    const user = await userSchema.findOne({"email": emailId});
+    if(user.role == 'Admin') {
+        let query = { role: "User" };
+        userSchema.find(query).exec().then(users => {
+            if (users != undefined && users.length > 0) {
+                res.status(200).json({success: true, message:'user list', user: users});
+            }
+        }).catch(e => {
+            console.log(e)
+            res.json(e)
+        })
+    }
+    else {
+        return res.json({ success: false, message: "you are not a admin" });
+    }
+});
+
 
 module.exports = router;
