@@ -17,9 +17,6 @@ const usersSchema = new mongoose.Schema({
     role: {
         type: String
     },
-    // role: {
-    //     type: [String]
-    // },
     phone_number: {
         type: String,
         unique: true,
