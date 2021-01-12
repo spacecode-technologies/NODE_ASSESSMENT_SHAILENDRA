@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 var request = require('request');
 const ExcelJs = require('exceljs');
 
+
 let router 	= express.Router();
 
 let userSchema = require('../model/users');
@@ -303,44 +304,38 @@ router.post('/getAllUserByAdmin', async (req, res) => {
 
 /* ----------------------------------- Day-4 Task ----------------------------------------------------  */
 /* Download excel File Api */
+router.get('/excelSheet', async (req, res, next) => {
+    try {
+        const users = await userSchema.find({});
+        //console.log(users)
+        const workbook = new ExcelJs.Workbook();
+        const worksheet = workbook.addWorksheet('users');
+        worksheet.columns = [
+            { header: "Id", key: "_id", width: 30 },
+            { header: "First_Name", key: "first_name", width: 30 },
+            { header: "Lase_Name", key: "last_name", width: 25 },
+            { header: "Email", key: "email", width: 30 },
+            { header: "Phone Number", key: "phone_number", width: 20 },
+        ];
+        worksheet.addRows(users);
 
-router.get('/excelSheet', async (req, res) => {
-    const users = userSchema.find({})
-    const workbook = new ExcelJs.Workbook();
-    const worksheet = workbook.addWorksheet('users');
-
-    worksheet.columns = [
-        { header: "Id", key: "_id", width: 20 },
-        { header: "First_Name", key: "first_name", width: 30 },
-        { header: "Lase_Name", key: "last_name", width: 25 },
-        { header: "Email", key: "email", width: 30 },
-        { header: "Phone Number", key: "phone_number", width: 20 },
-    ];
-    let count = 1;
-    users.forEach(user => {
-        (user).s_no = count;
-        worksheet.addRow(user);
-        count += 1;
-    });
-    worksheet.addRows(users);
-
-    res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=" + "users.xlsx"
-    );
-    worksheet.getRow(1).eachCell((cell) => {
-        cell.font = {bold: true};
-    });
-
-    const data = await workbook.xlsx.writeFile('users.xlsx')
-    res.send('excel sheet saved');
-    return workbook.xlsx.write(res).then(function () {
-        res.status(200).end();
-    })
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=" + "users.xlsx"
+        );
+        worksheet.getRow(1).eachCell((cell) => {
+            cell.font = {bold: true};
+        });
+        return workbook.xlsx.write(res).then(function () {
+            res.status(200).end();
+        });
+    } catch (e) {
+        res.status(500).send(e);
+    }
 });
 
 module.exports = router;
