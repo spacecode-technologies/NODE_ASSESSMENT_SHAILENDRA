@@ -3,6 +3,7 @@ const session = require('express-session');
 var jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 var request = require('request');
+const ExcelJs = require('exceljs');
 
 let router 	= express.Router();
 
@@ -224,7 +225,6 @@ router.delete('/deleteById/:id', async (req, res) => {
 
 /* ----------------------- Day-3 Task ----------------------------------------------------  */
 router.get('/pincodeDetails/:pin', async (req, res, next) => {
-
     await request.get('https://api.postalpincode.in/pincode/'+ req.params.pin, function(err, response, body) {
         if(!err) {
             let pincodeDetail = JSON.parse(body);
@@ -287,7 +287,7 @@ router.post('/getAllUserByAdmin', async (req, res) => {
     const user = await userSchema.findOne({"email": emailId});
     if(user.role == 'Admin') {
         let query = { role: "User" };
-        userSchema.find(query).exec().then(users => {
+        await userSchema.find(query).exec().then(users => {
             if (users != undefined && users.length > 0) {
                 res.status(200).json({success: true, message:'user list', user: users});
             }
@@ -301,5 +301,46 @@ router.post('/getAllUserByAdmin', async (req, res) => {
     }
 });
 
+/* ----------------------------------- Day-4 Task ----------------------------------------------------  */
+/* Download excel File Api */
+
+router.get('/excelSheet', async (req, res) => {
+    const users = userSchema.find({})
+    const workbook = new ExcelJs.Workbook();
+    const worksheet = workbook.addWorksheet('users');
+
+    worksheet.columns = [
+        { header: "Id", key: "_id", width: 20 },
+        { header: "First_Name", key: "first_name", width: 30 },
+        { header: "Lase_Name", key: "last_name", width: 25 },
+        { header: "Email", key: "email", width: 30 },
+        { header: "Phone Number", key: "phone_number", width: 20 },
+    ];
+    let count = 1;
+    users.forEach(user => {
+        (user).s_no = count;
+        worksheet.addRow(user);
+        count += 1;
+    });
+    worksheet.addRows(users);
+
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=" + "users.xlsx"
+    );
+    worksheet.getRow(1).eachCell((cell) => {
+        cell.font = {bold: true};
+    });
+
+    const data = await workbook.xlsx.writeFile('users.xlsx')
+    res.send('excel sheet saved');
+    return workbook.xlsx.write(res).then(function () {
+        res.status(200).end();
+    })
+});
 
 module.exports = router;
