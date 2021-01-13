@@ -4,7 +4,8 @@
   "description": "Assessment test for nodejs mongodb",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon server.js",
+    "test": "mocha"
   },
   "author": "shailendrakumarsen@gmail.com",
   "license": "ISC",
@@ -25,6 +26,9 @@
     "request": "^2.88.2"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^8.2.1",
     "nodemon": "^2.0.7"
   }
 }

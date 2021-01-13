@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 var request = require('request');
 const ExcelJs = require('exceljs');
 
-
 let router 	= express.Router();
 
 let userSchema = require('../model/users');
@@ -157,11 +156,8 @@ router.post('/info', async (req, res) => {
 });
 
 /* getUserById API */
-router.post('/getById', async (req, res, next) => {
-    let token = req.body.token;
-    
-    var decoded = jwt.verify(token, 'secret');
-    const user = await userSchema.find({"_id": decoded.user_id})
+router.get('/getById/:id', async (req, res, next) => {
+    const user = await userSchema.find({"_id": req.params.id})
 	.select('first_name last_name email phone_number')
 	if (user != undefined && user.length > 0) {
 		return res.status(200).json({success: true, data: user });
